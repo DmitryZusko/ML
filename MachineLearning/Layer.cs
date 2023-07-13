@@ -3,7 +3,6 @@
     public class Layer
     {
         public List<Neuron> Neurons { get; set; } = new List<Neuron>();
-        public int AmountOfNeurons => Neurons.Count;
 
         public Layer() { }
         public Layer(List<Neuron> neurons) => Neurons = neurons;

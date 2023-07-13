@@ -7,6 +7,13 @@
             return 1 / (1 + Math.Exp(-x));
         }
 
+        public static double GenerateRandomValue()
+        {
+            var rnd = new Random();
+            var minValue = 0.00000000000001;
+            return minValue + rnd.NextDouble() * (1 - minValue);
+        }
+
         public static double DerivedSigmoid(double x)
         {
             var sigmoid = Sigmoid(x);
