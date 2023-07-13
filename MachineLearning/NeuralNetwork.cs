@@ -14,6 +14,67 @@
             CreateOutputLayer();
         }
 
+        public void StartLearning(List<Tuple<double[], double>> dataset, int epochCount, double learningRate)
+        {
+            for (var i = 1; i < epochCount; i++)
+            {
+                //var dynamicLearningRate = 1 * learningRate / (Math.Log10(i) + 1);
+                foreach (var data in dataset)
+                {
+                    var result = Learn(data.Item1, data.Item2, learningRate);
+
+                    Console.WriteLine(result.Output);
+                }
+            }
+        }
+
+        private Neuron Learn(double[] data, double expected, double learningRate)
+        {
+            var output = FeedForward(data.ToList());
+
+            var error = expected - output.Output;
+
+            SetErrors(error);
+
+            for (var layerIndex = Layers.Count - 1; layerIndex > 0; layerIndex--)
+            {
+                var boundedResults = Layers[layerIndex - 1].GetResults();
+
+                foreach (var neuron in Layers[layerIndex].Neurons)
+                {
+                    neuron.Learn(boundedResults, learningRate);
+                }
+            }
+
+            return output;
+        }
+
+        private void SetErrors(double error)
+        {
+            foreach (var neuron in Layers.Last().Neurons)
+            {
+                neuron.Error = error;
+            }
+
+            for (var layerIndex = Layers.Count - 2; layerIndex > 0; layerIndex--)
+            {
+                var curLayer = Layers[layerIndex];
+                var prevLayer = Layers[layerIndex + 1];
+
+                for (var curNeuronIndex = 0; curNeuronIndex < curLayer.Neurons.Count; curNeuronIndex++)
+                {
+                    var currentNeuron = curLayer.Neurons[curNeuronIndex];
+                    currentNeuron.Error = 0;
+
+                    for (var prevNeuronIndex = 0; prevNeuronIndex < prevLayer.Neurons.Count; prevNeuronIndex++)
+                    {
+                        var prevNeuron = prevLayer.Neurons[prevNeuronIndex];
+                        currentNeuron.Error += prevNeuron.Error * prevNeuron.Weights[curNeuronIndex];
+                    }
+                }
+            }
+        }
+
         public Neuron FeedForward(List<double> inputSignals)
         {
             FeedInputLayer(inputSignals);
@@ -87,5 +148,6 @@
 
             Layers.Add(layer);
         }
+
     }
 }

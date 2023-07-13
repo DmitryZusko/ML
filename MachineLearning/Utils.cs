@@ -10,8 +10,10 @@
         public static double GenerateRandomValue()
         {
             var rnd = new Random();
-            var minValue = 0.00000000000001;
-            return minValue + rnd.NextDouble() * (1 - minValue);
+            //var minValue = 0.00000000000001;
+            //return minValue + rnd.NextDouble() * (1 - minValue);
+
+            return rnd.NextDouble();
         }
 
         public static double DerivedSigmoid(double x)
