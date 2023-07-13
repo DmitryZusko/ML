@@ -1,5 +1,6 @@
 ﻿using MachineLearning;
 
+#region simple test data
 //var dataset = new List<Tuple<double[], double>>
 //{
 //    new Tuple<double[], double> (new double[] {1, 0}, 1),
@@ -38,28 +39,49 @@
 
 //var topology = new NeuralNetworkTopology { InputNeuronsCount = 3, HiddenLayersNeuronsCount = new List<int> { 3 }, OutputNeuronsCount = 1, LearningRate = .5 };
 
+//var dataset = new List<Tuple<double[], double>>
+//{
+//    new Tuple<double[], double> (new double[] {1, 0, 0, 0, 0}, .2),
+//    new Tuple<double[], double> (new double[] {0, 1, 0, 0, 0}, .2),
+//    new Tuple<double[], double> (new double[] {0, 0, 1, 0, 0}, .2),
+//    new Tuple<double[], double> (new double[] {0, 0, 0, 0, 1}, .2),
+//    new Tuple<double[], double> (new double[] {0, 1, 0, 0, 1}, .4),
+//    new Tuple<double[], double> (new double[] {0, 1, 0, 1, 0}, .4),
+//    new Tuple<double[], double> (new double[] {1, 0, 1, 0, 0}, .4),
+//    new Tuple<double[], double> (new double[] {1, 0, 0, 0, 1}, .4),
+//    new Tuple<double[], double> (new double[] {0, 1, 0, 1, 0}, .4),
+//    //new Tuple<double[], double> (new double[] {0, 1, 0, 1, 0}, .4),
+//    new Tuple<double[], double> (new double[] {1, 1, 0, 1, 0}, .6),
+//    new Tuple<double[], double> (new double[] {1, 1, 0, 1, 0}, .6),
+//    new Tuple<double[], double> (new double[] {1, 0, 0, 1, 1}, .6),
+//    new Tuple<double[], double> (new double[] {0, 1, 1, 1, 0}, .6),
+//    new Tuple<double[], double> (new double[] {1, 1, 1, 1, 0}, .6),
+//    new Tuple<double[], double> (new double[] {0, 1, 1, 1, 1}, .8),
+//    new Tuple<double[], double> (new double[] {1, 1, 1, 1, 1}, 1.0),
+//};
+
+//var topology = new NeuralNetworkTopology { InputNeuronsCount = 5, HiddenLayersNeuronsCount = new List<int> { 3 }, OutputNeuronsCount = 1, LearningRate = .9 };
+
 var dataset = new List<Tuple<double[], double>>
 {
-    new Tuple<double[], double> (new double[] {1, 0, 0, 0, 0}, .2),
-    new Tuple<double[], double> (new double[] {0, 1, 0, 0, 0}, .2),
-    new Tuple<double[], double> (new double[] {0, 0, 1, 0, 0}, .2),
-    new Tuple<double[], double> (new double[] {0, 0, 0, 0, 1}, .2),
-    new Tuple<double[], double> (new double[] {0, 1, 0, 0, 1}, .4),
-    new Tuple<double[], double> (new double[] {0, 1, 0, 1, 0}, .4),
-    new Tuple<double[], double> (new double[] {1, 0, 1, 0, 0}, .4),
-    new Tuple<double[], double> (new double[] {1, 0, 0, 0, 1}, .4),
-    new Tuple<double[], double> (new double[] {0, 1, 0, 1, 0}, .4),
-    //new Tuple<double[], double> (new double[] {0, 1, 0, 1, 0}, .4),
-    new Tuple<double[], double> (new double[] {1, 1, 0, 1, 0}, .6),
-    new Tuple<double[], double> (new double[] {1, 1, 0, 1, 0}, .6),
-    new Tuple<double[], double> (new double[] {1, 0, 0, 1, 1}, .6),
-    new Tuple<double[], double> (new double[] {0, 1, 1, 1, 0}, .6),
-    new Tuple<double[], double> (new double[] {1, 1, 1, 1, 0}, .6),
-    new Tuple<double[], double> (new double[] {0, 1, 1, 1, 1}, .8),
-    new Tuple<double[], double> (new double[] {1, 1, 1, 1, 1}, 1.0),
+    new Tuple<double[], double> (new double[] {1, 0, 0, 0}, .5),
+    new Tuple<double[], double> (new double[] {0, 1, 0, 0}, .2),
+    new Tuple<double[], double> (new double[] {0, 0, 1, 0}, .2),
+    new Tuple<double[], double> (new double[] {0, 0, 0, 1}, .1),
+    new Tuple<double[], double> (new double[] {1, 0, 0, 1}, .6),
+    new Tuple<double[], double> (new double[] {0, 1, 0, 1}, .3),
+    new Tuple<double[], double> (new double[] {0, 0, 1, 1}, .3),
+    new Tuple<double[], double> (new double[] {1, 1, 0, 0}, .7),
+    new Tuple<double[], double> (new double[] {1, 1, 0, 1}, .8),
+    new Tuple<double[], double> (new double[] {1, 0, 1, 1}, .8),
+    new Tuple<double[], double> (new double[] {1, 1, 1, 1}, 1.0),
 };
 
-var topology = new NeuralNetworkTopology { InputNeuronsCount = 5, HiddenLayersNeuronsCount = new List<int> { 3 }, OutputNeuronsCount = 1, LearningRate = .9 };
+var topology = new NeuralNetworkTopology { InputNeuronsCount = 4, HiddenLayersNeuronsCount = new List<int> { 4 }, OutputNeuronsCount = 1, LearningRate = .9 };
+
+#endregion
+
+
 
 var network = new NeuralNetwork(topology);
 
@@ -79,9 +101,9 @@ foreach (var data in dataset)
 //    Console.WriteLine($"expected: {data.Item2} --- result: {Math.Round(result.Output, 2)}");
 //}
 
-result = network.FeedForward(new List<double> { 0, 0, 0, 1, 0 });
-Console.WriteLine($"expected: {.2} --- result: {result.Output,1}");
-result = network.FeedForward(new List<double> { 0, 1, 0, 1, 0 });
-Console.WriteLine($"expected: {.4} --- result: {result.Output,1}");
+//result = network.FeedForward(new List<double> { 0, 0, 0, 1, 0 });
+//Console.WriteLine($"expected: {.2} --- result: {result.Output}");
+//result = network.FeedForward(new List<double> { 0, 1, 0, 1, 0 });
+//Console.WriteLine($"expected: {.4} --- result: {result.Output}");
 
 Console.WriteLine();
