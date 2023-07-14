@@ -98,7 +98,7 @@ var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersN
 
 var network = new NeuralNetwork(topology);
 
-network.StartLearning(dataset, 500, network.Topology.LearningRate, true);
+network.StartLearning(dataset, 100, network.Topology.LearningRate, true);
 
 //foreach (var data in dataset)
 //{

@@ -22,25 +22,28 @@ namespace MachineLearning
             var stopwatch = Stopwatch.StartNew();
             for (var i = 1; i < epochCount; i++)
             {
+                var errors = new List<double>();
                 //var dynamicLearningRate = 1 * learningRate / (Math.Log10(i) + 1);
                 foreach (var data in dataset)
                 {
-                    var result = Learn(data.Item2, data.Item1, learningRate);
+                    var result = FeedForward(data.Item2.ToList());
 
+                    errors.Add(data.Item1 - result.Output);
                     Console.WriteLine(i);
                     Console.WriteLine($"expected: {data.Item1} --- result: {result.Output}");
                 }
+
+                var avgError = errors.Average();
+
+                Learn(avgError, learningRate);
             }
 
             stopwatch.Stop();
             if (collectData) RunAndSnapshot(dataset, epochCount, learningRate, stopwatch.ElapsedMilliseconds);
         }
 
-        private Neuron Learn(double[] data, double expected, double learningRate)
+        private void Learn(double error, double learningRate)
         {
-            var output = FeedForward(data.ToList());
-
-            var error = expected - output.Output;
 
             SetErrors(error);
 
@@ -53,8 +56,6 @@ namespace MachineLearning
                     neuron.Learn(boundedResults, learningRate);
                 }
             }
-
-            return output;
         }
 
         private void SetErrors(double error)
@@ -165,7 +166,7 @@ namespace MachineLearning
 
 
             //create data folder
-            var folderPath = $"RESULTS\\{DateTime.Now.ToString("MM/dd/yy")}_{epochCount}_{learningRate}_{learTime}";
+            var folderPath = $"RESULTS\\AVG_{DateTime.Now.ToString("MM/dd/yy")}_{epochCount}_{learningRate}_{learTime}";
 
             foreach (var layer in Topology.HiddenLayersNeuronsCount)
             {
