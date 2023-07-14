@@ -1,4 +1,5 @@
 ﻿using MachineLearning;
+using Newtonsoft.Json;
 
 #region simple test data
 //var dataset = new List<Tuple<double[], double>>
@@ -62,38 +63,48 @@
 
 //var topology = new NeuralNetworkTopology { InputNeuronsCount = 5, HiddenLayersNeuronsCount = new List<int> { 3 }, OutputNeuronsCount = 1, LearningRate = .9 };
 
-var dataset = new List<Tuple<double[], double>>
-{
-    new Tuple<double[], double> (new double[] {1, 0, 0, 0}, .5),
-    new Tuple<double[], double> (new double[] {0, 1, 0, 0}, .2),
-    new Tuple<double[], double> (new double[] {0, 0, 1, 0}, .2),
-    new Tuple<double[], double> (new double[] {0, 0, 0, 1}, .1),
-    new Tuple<double[], double> (new double[] {1, 0, 0, 1}, .6),
-    new Tuple<double[], double> (new double[] {0, 1, 0, 1}, .3),
-    new Tuple<double[], double> (new double[] {0, 0, 1, 1}, .3),
-    new Tuple<double[], double> (new double[] {1, 1, 0, 0}, .7),
-    new Tuple<double[], double> (new double[] {1, 1, 0, 1}, .8),
-    new Tuple<double[], double> (new double[] {1, 0, 1, 1}, .8),
-    new Tuple<double[], double> (new double[] {1, 1, 1, 1}, 1.0),
-};
+//var dataset = new List<Tuple<double[], double>>
+//{
+//    new Tuple<double[], double> (new double[] {1, 0, 0, 0}, .5),
+//    new Tuple<double[], double> (new double[] {0, 1, 0, 0}, .2),
+//    new Tuple<double[], double> (new double[] {0, 0, 1, 0}, .2),
+//    new Tuple<double[], double> (new double[] {0, 0, 0, 1}, .1),
+//    new Tuple<double[], double> (new double[] {1, 0, 0, 1}, .6),
+//    new Tuple<double[], double> (new double[] {0, 1, 0, 1}, .3),
+//    new Tuple<double[], double> (new double[] {0, 0, 1, 1}, .3),
+//    new Tuple<double[], double> (new double[] {1, 1, 0, 0}, .7),
+//    new Tuple<double[], double> (new double[] {1, 1, 0, 1}, .8),
+//    new Tuple<double[], double> (new double[] {1, 0, 1, 1}, .8),
+//    new Tuple<double[], double> (new double[] {1, 1, 1, 1}, 1.0),
+//};
 
-var topology = new NeuralNetworkTopology { InputNeuronsCount = 4, HiddenLayersNeuronsCount = new List<int> { 4 }, OutputNeuronsCount = 1, LearningRate = .9 };
+//var topology = new NeuralNetworkTopology { InputNeuronsCount = 4, HiddenLayersNeuronsCount = new List<int> { 4 }, OutputNeuronsCount = 1, LearningRate = .9 };
 
 #endregion
 
+string datasetStr = "";
 
+using (FileStream fsr = new FileStream("LearningDataset_improoved.json", FileMode.Open))
+{
+    using (StreamReader sr = new StreamReader(fsr))
+    {
+        datasetStr = sr.ReadToEnd();
+    }
+}
+
+var dataset = JsonConvert.DeserializeObject<List<Tuple<double, double[]>>>(datasetStr);
+
+var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 14 }, OutputNeuronsCount = 1, LearningRate = .15 };
 
 var network = new NeuralNetwork(topology);
 
-network.StartLearning(dataset, 10_000, network.Topology.LearningRate);
+network.StartLearning(dataset, 500, network.Topology.LearningRate, true);
 
-var result = new Neuron();
-
-foreach (var data in dataset)
-{
-    result = network.FeedForward(data.Item1.ToList());
-    Console.WriteLine($"expected: {data.Item2} --- result: {result.Output,2}");
-}
+//foreach (var data in dataset)
+//{
+//    result = network.FeedForward(data.Item2.ToList());
+//    Console.WriteLine($"expected: {data.Item1} --- result: {result.Output}");
+//}
 
 //foreach (var data in dataset)
 //{

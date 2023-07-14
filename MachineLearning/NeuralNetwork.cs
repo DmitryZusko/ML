@@ -1,4 +1,7 @@
-﻿namespace MachineLearning
+﻿using Newtonsoft.Json;
+using System.Diagnostics;
+
+namespace MachineLearning
 {
     public class NeuralNetwork
     {
@@ -14,18 +17,23 @@
             CreateOutputLayer();
         }
 
-        public void StartLearning(List<Tuple<double[], double>> dataset, int epochCount, double learningRate)
+        public void StartLearning(List<Tuple<double, double[]>> dataset, int epochCount, double learningRate, bool collectData)
         {
+            var stopwatch = Stopwatch.StartNew();
             for (var i = 1; i < epochCount; i++)
             {
                 //var dynamicLearningRate = 1 * learningRate / (Math.Log10(i) + 1);
                 foreach (var data in dataset)
                 {
-                    var result = Learn(data.Item1, data.Item2, learningRate);
+                    var result = Learn(data.Item2, data.Item1, learningRate);
 
-                    Console.WriteLine(result.Output);
+                    Console.WriteLine(i);
+                    Console.WriteLine($"expected: {data.Item1} --- result: {result.Output}");
                 }
             }
+
+            stopwatch.Stop();
+            if (collectData) RunAndSnapshot(dataset, epochCount, learningRate, stopwatch.ElapsedMilliseconds);
         }
 
         private Neuron Learn(double[] data, double expected, double learningRate)
@@ -149,5 +157,69 @@
             Layers.Add(layer);
         }
 
+        private void RunAndSnapshot(List<Tuple<double, double[]>> dataset, int epochCount, double learningRate, long learTime)
+        {
+            Console.WriteLine();
+            Console.WriteLine("============== FINAL ROUND ==============");
+            Console.WriteLine();
+
+
+            //create data folder
+            var folderPath = $"RESULTS\\{DateTime.Now.ToString("MM/dd/yy")}_{epochCount}_{learningRate}_{learTime}";
+
+            foreach (var layer in Topology.HiddenLayersNeuronsCount)
+            {
+                folderPath += $"_{layer}";
+            }
+
+            Directory.CreateDirectory(folderPath);
+
+            //save current weights
+            List<List<List<double>>> weights = new List<List<List<double>>>();
+
+            foreach (var layer in Layers)
+            {
+                List<List<double>> layerWeight = new List<List<double>>();
+                foreach (var neuro in layer.Neurons)
+                {
+                    layerWeight.Add(neuro.Weights);
+                }
+                weights.Add(layerWeight);
+            }
+
+            var weightsJson = JsonConvert.SerializeObject(weights);
+
+            using (var file = new FileStream(Path.Combine(folderPath, "weights.json"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(file))
+                {
+                    writer.WriteLine(weightsJson);
+                }
+            }
+
+            //run
+            var errors = new List<double>();
+
+            foreach (var data in dataset)
+            {
+                var result = FeedForward(data.Item2.ToList());
+                Console.WriteLine($"expected: {data.Item1} --- result: {result.Output}");
+                errors.Add(data.Item1 - result.Output);
+            }
+
+            //save errors
+            using (var file = new FileStream(Path.Combine(folderPath, "errors.txt"), FileMode.Create))
+            {
+                using (var writer = new StreamWriter(file))
+                {
+                    foreach (var e in errors)
+                    {
+                        writer.WriteLine(e);
+                    }
+                }
+            }
+
+
+        }
     }
 }
