@@ -82,24 +82,20 @@ using Newtonsoft.Json;
 
 #endregion
 
-string datasetStr = "";
 
-using (FileStream fsr = new FileStream("LearningDataset_improoved.json", FileMode.Open))
-{
-    using (StreamReader sr = new StreamReader(fsr))
-    {
-        datasetStr = sr.ReadToEnd();
-    }
-}
+var dataset = LoadData("LearningDataset_improoved.json");
 
-var dataset = JsonConvert.DeserializeObject<List<Tuple<double, double[]>>>(datasetStr);
+var weights = LoadWeights("weights.json");
 
-var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 14, 14, 14 }, OutputNeuronsCount = 1, LearningRate = .15 };
+var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 64 }, OutputNeuronsCount = 1, LearningRate = .15 };
 
-var network = new NeuralNetwork(topology);
+//var network = new NeuralNetwork(topology);
 
-network.StartLearning(dataset, 500, network.Topology.LearningRate, true);
+var network = new NeuralNetwork(topology, weights);
 
+network.StartLearning(dataset, 1000, network.Topology.LearningRate, true);
+
+#region more tests
 //foreach (var data in dataset)
 //{
 //    result = network.FeedForward(data.Item2.ToList());
@@ -116,5 +112,39 @@ network.StartLearning(dataset, 500, network.Topology.LearningRate, true);
 //Console.WriteLine($"expected: {.2} --- result: {result.Output}");
 //result = network.FeedForward(new List<double> { 0, 1, 0, 1, 0 });
 //Console.WriteLine($"expected: {.4} --- result: {result.Output}");
+#endregion
 
 Console.WriteLine();
+
+
+List<List<List<double>>> LoadWeights(string filePath)
+{
+    string weightsStr = "";
+
+    using (FileStream fsr = new FileStream(filePath, FileMode.Open))
+    {
+        using (StreamReader sr = new StreamReader(fsr))
+        {
+            weightsStr = sr.ReadToEnd();
+        }
+    }
+
+    return JsonConvert.DeserializeObject<List<List<List<double>>>>(weightsStr);
+
+}
+
+List<Tuple<double, double[]>> LoadData(string filePath)
+{
+    string datasetStr = "";
+
+    using (FileStream fsr = new FileStream(filePath, FileMode.Open))
+    {
+        using (StreamReader sr = new StreamReader(fsr))
+        {
+            datasetStr = sr.ReadToEnd();
+        }
+    }
+
+    return JsonConvert.DeserializeObject<List<Tuple<double, double[]>>>(datasetStr);
+
+}

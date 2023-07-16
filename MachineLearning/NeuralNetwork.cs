@@ -17,6 +17,18 @@ namespace MachineLearning
             CreateOutputLayer();
         }
 
+        public NeuralNetwork(NeuralNetworkTopology topology, List<List<List<double>>> weights)
+        {
+            Topology = topology;
+
+            CreateInputLayer(weights.FirstOrDefault());
+            for (var i = 1; i < weights.Count - 1; i++)
+            {
+                CreateHiddenLayers(weights[i], i - 1);
+            }
+            CreateOutputLayer(weights.LastOrDefault());
+        }
+
         public void StartLearning(List<Tuple<double, double[]>> dataset, int epochCount, double learningRate, bool collectData)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -152,6 +164,45 @@ namespace MachineLearning
             for (int i = 0; i < Topology.OutputNeuronsCount; i++)
             {
                 layer.Neurons.Add(new Neuron(lastLayerNeuronsCount, NeuronTypes.Output));
+            }
+
+            Layers.Add(layer);
+        }
+
+        private void CreateInputLayer(List<List<double>>? weightsList)
+        {
+            if (weightsList.Count != Topology.InputNeuronsCount) throw new Exception("Bad topology");
+
+            var layer = new Layer();
+            foreach (var weights in weightsList)
+            {
+                layer.Neurons.Add(new Neuron { Weights = weights, NeuronType = NeuronTypes.Input });
+            }
+
+            Layers.Add(layer);
+        }
+
+        private void CreateHiddenLayers(List<List<double>> weightsList, int layerNumber)
+        {
+            if (weightsList.Count != Topology.HiddenLayersNeuronsCount[layerNumber]) throw new Exception("Bad topology");
+
+            var layer = new Layer();
+            foreach (var weights in weightsList)
+            {
+                layer.Neurons.Add(new Neuron { Weights = weights, NeuronType = NeuronTypes.Hidden });
+            }
+
+            Layers.Add(layer);
+        }
+
+        private void CreateOutputLayer(List<List<double>>? weightsList)
+        {
+            if (weightsList.Count != Topology.OutputNeuronsCount) throw new Exception("Bad topology");
+
+            var layer = new Layer();
+            foreach (var weights in weightsList)
+            {
+                layer.Neurons.Add(new Neuron { Weights = weights, NeuronType = NeuronTypes.Output });
             }
 
             Layers.Add(layer);
