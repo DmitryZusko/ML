@@ -94,11 +94,11 @@ using (FileStream fsr = new FileStream("LearningDataset_improoved.json", FileMod
 
 var dataset = JsonConvert.DeserializeObject<List<Tuple<double, double[]>>>(datasetStr);
 
-var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 64, 64 }, OutputNeuronsCount = 1, LearningRate = .15 };
+var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 14, 14, 14 }, OutputNeuronsCount = 1, LearningRate = .15 };
 
 var network = new NeuralNetwork(topology);
 
-network.StartLearning(dataset, 100, network.Topology.LearningRate, true);
+network.StartLearning(dataset, 500, network.Topology.LearningRate, true);
 
 //foreach (var data in dataset)
 //{
