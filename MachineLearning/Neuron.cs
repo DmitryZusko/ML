@@ -9,17 +9,18 @@
 
         public Neuron() { }
 
-        public Neuron(int inputCount, NeuronTypes type)
+        public Neuron(int inputCount, NeuronTypes type, bool generateWeights)
         {
             NeuronType = type;
-            InitWeights(inputCount);
+
+            if (generateWeights) InitWeights(inputCount);
         }
 
         public double FeedForward(List<double> inputs)
         {
             var sum = 0.0;
 
-            for (var i = 0; i < inputs.Count(); i++)
+            for (var i = 0; i < inputs.Count; i++)
             {
                 sum += inputs[i] * Weights[i];
             }
@@ -44,18 +45,6 @@
                 Weights = Enumerable.Repeat(1.0, inputCount).ToList();
                 return;
             }
-
-            //if (NeuronType == NeuronTypes.Hidden)
-            //{
-            //    Weights = new List<double> { 0.07, 0.69 };
-            //    return;
-            //}
-
-            //if (NeuronType == NeuronTypes.Output)
-            //{
-            //    Weights = new List<double> { 0.15, 0.37 };
-            //    return;
-            //}
 
             for (var i = 0; i < inputCount; i++)
             {

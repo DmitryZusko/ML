@@ -7,28 +7,88 @@ namespace MachineLearning
     {
         public List<Layer> Layers { get; set; } = new List<Layer>();
         public NeuralNetworkTopology Topology { get; set; } = null!;
-
-        public NeuralNetwork(NeuralNetworkTopology topology)
+        private UserConnection _userConnection;
+        public UserConnection UserConnection
         {
-            Topology = topology;
-
-            CreateInputLayer();
-            CreateHiddenLayers();
-            CreateOutputLayer();
-        }
-
-        public NeuralNetwork(NeuralNetworkTopology topology, List<List<List<double>>> weights)
-        {
-            Topology = topology;
-
-            CreateInputLayer(weights.FirstOrDefault());
-            for (var i = 1; i < weights.Count - 1; i++)
+            get
             {
-                CreateHiddenLayers(weights[i], i - 1);
+                return _userConnection ??
+                    (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
             }
-            CreateOutputLayer(weights.LastOrDefault());
+            set
+            {
+                _userConnection = value;
+            }
         }
 
+        //якщо створюється мережа з нуля, generateWeights = true генерує рандомні значення вагів
+        public NeuralNetwork(NeuralNetworkTopology topology, bool generateWeights = false)
+        {
+            Topology = topology;
+
+            CreateInputLayer(generateWeights);
+            CreateHiddenLayers(generateWeights);
+            CreateOutputLayer(generateWeights);
+        }
+
+        public void LoadWeightsFromJsonFile(string filePath)
+        {
+            string weightsStr = "";
+
+            using (FileStream fsr = new FileStream(filePath, FileMode.Open))
+            {
+                using (StreamReader sr = new StreamReader(fsr))
+                {
+                    weightsStr = sr.ReadToEnd();
+                }
+            }
+
+            var weights = JsonConvert.DeserializeObject<List<List<List<double>>>>(weightsStr);
+
+            SetWeights(weights);
+        }
+
+        public void LoadWeightsFromLookup(string lookupName)
+        {
+            List<List<List<double>>> weights = new();
+
+            Select selectWeights = new Select(UserConnection)
+            .Column("GenWeightsJson").Top(1)
+            .From(lookupName)
+            .OrderByDesc("ModifiedOn")
+            as Select;
+
+            using (var dbExecutor = UserConnection.EnsureDBConnection())
+            {
+                using (var reader = selectWeights.ExecuteReader(dbExecutor))
+                {
+                    if (reader.Read())
+                    {
+                        string jWeights = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0) : "";
+                        if (!string.IsNullOrEmpty(jWeights))
+                        {
+                            weights = JsonConvert.DeserializeObject<List<List<List<double>>>>(jWeights);
+                        }
+                    }
+                }
+            }
+
+            SetWeights(weights);
+        }
+
+        public List<double> CalculateResults(List<List<double>> dataset)
+        {
+            var results = new List<double>();
+
+            foreach (var data in dataset)
+            {
+                results.Add(FeedForward(data).Output);
+            }
+
+            return results;
+        }
+
+        //collectData = true прожене датасет додатковий раз після навчання і збереже отримані помилки і ваги в окремі файли
         public void StartLearning(List<Tuple<double, double[]>> dataset, int epochCount, double learningRate, bool collectData)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -48,54 +108,58 @@ namespace MachineLearning
             if (collectData) RunAndSnapshot(dataset, epochCount, learningRate, stopwatch.ElapsedMilliseconds);
         }
 
-        private Neuron Learn(double[] data, double expected, double learningRate)
+        private void CreateInputLayer(bool generateWeights)
         {
-            var output = FeedForward(data.ToList());
+            var layer = new Layer();
 
-            var error = expected - output.Output;
-
-            SetErrors(error);
-
-            for (var layerIndex = Layers.Count - 1; layerIndex > 0; layerIndex--)
+            for (int i = 0; i < Topology.InputNeuronsCount; i++)
             {
-                var boundedResults = Layers[layerIndex - 1].GetResults();
-
-                foreach (var neuron in Layers[layerIndex].Neurons)
-                {
-                    neuron.Learn(boundedResults, learningRate);
-                }
+                layer.Neurons.Add(new Neuron(1, NeuronTypes.Input, generateWeights));
             }
 
-            return output;
+            Layers.Add(layer);
         }
 
-        private void SetErrors(double error)
+        private void CreateHiddenLayers(bool generateWeights)
         {
-            foreach (var neuron in Layers.Last().Neurons)
+            foreach (var layerSize in Topology.HiddenLayersNeuronsCount)
             {
-                neuron.Error = error;
-            }
+                var layer = new Layer();
+                var lastLayerNeuronsCount = Layers.Last().Neurons.Count;
 
-            for (var layerIndex = Layers.Count - 2; layerIndex > 0; layerIndex--)
-            {
-                var curLayer = Layers[layerIndex];
-                var prevLayer = Layers[layerIndex + 1];
-
-                for (var curNeuronIndex = 0; curNeuronIndex < curLayer.Neurons.Count; curNeuronIndex++)
+                for (var i = 0; i < layerSize; i++)
                 {
-                    var currentNeuron = curLayer.Neurons[curNeuronIndex];
-                    currentNeuron.Error = 0;
-
-                    for (var prevNeuronIndex = 0; prevNeuronIndex < prevLayer.Neurons.Count; prevNeuronIndex++)
-                    {
-                        var prevNeuron = prevLayer.Neurons[prevNeuronIndex];
-                        currentNeuron.Error += prevNeuron.Error * prevNeuron.Weights[curNeuronIndex];
-                    }
+                    layer.Neurons.Add(new Neuron(lastLayerNeuronsCount, NeuronTypes.Hidden, generateWeights));
                 }
+
+                Layers.Add(layer);
             }
         }
 
-        public Neuron FeedForward(List<double> inputSignals)
+        private void CreateOutputLayer(bool generateWeights)
+        {
+            var layer = new Layer();
+            var lastLayerNeuronsCount = Layers.Last().Neurons.Count;
+
+            for (int i = 0; i < Topology.OutputNeuronsCount; i++)
+            {
+                layer.Neurons.Add(new Neuron(lastLayerNeuronsCount, NeuronTypes.Output, generateWeights));
+            }
+
+            Layers.Add(layer);
+        }
+
+        private void SetWeights(List<List<List<double>>>? weights)
+        {
+            if (weights?.Count != Layers.Count) throw new Exception("Bad topology!");
+
+            for (var i = 0; i < weights.Count; i++)
+            {
+                Layers[i].SetWeights(weights[i]);
+            }
+        }
+
+        private Neuron FeedForward(List<double> inputSignals)
         {
             FeedInputLayer(inputSignals);
 
@@ -128,86 +192,56 @@ namespace MachineLearning
             }
         }
 
-        private void CreateInputLayer()
+        private Neuron Learn(double[] data, double expected, double learningRate)
         {
-            var layer = new Layer();
+            var output = FeedForward(data.ToList());
 
-            for (int i = 0; i < Topology.InputNeuronsCount; i++)
+            var error = expected - output.Output;
+
+            SetErrors(error);
+
+            for (var layerIndex = Layers.Count - 1; layerIndex > 0; layerIndex--)
             {
-                layer.Neurons.Add(new Neuron(1, NeuronTypes.Input));
-            }
+                var boundedResults = Layers[layerIndex - 1].GetResults();
 
-            Layers.Add(layer);
-        }
-
-        private void CreateHiddenLayers()
-        {
-            foreach (var layerSize in Topology.HiddenLayersNeuronsCount)
-            {
-                var layer = new Layer();
-                var lastLayerNeuronsCount = Layers.Last().Neurons.Count;
-
-                for (var i = 0; i < layerSize; i++)
+                foreach (var neuron in Layers[layerIndex].Neurons)
                 {
-                    layer.Neurons.Add(new Neuron(lastLayerNeuronsCount, NeuronTypes.Hidden));
+                    neuron.Learn(boundedResults, learningRate);
                 }
-
-                Layers.Add(layer);
             }
+
+            return output;
         }
 
-        private void CreateOutputLayer()
+        private void SetErrors(double error)
         {
-            var layer = new Layer();
-            var lastLayerNeuronsCount = Layers.Last().Neurons.Count;
-
-            for (int i = 0; i < Topology.OutputNeuronsCount; i++)
+            //записуємо помилки для Output Layer
+            foreach (var neuron in Layers.Last().Neurons)
             {
-                layer.Neurons.Add(new Neuron(lastLayerNeuronsCount, NeuronTypes.Output));
+                neuron.Error = error;
             }
 
-            Layers.Add(layer);
-        }
-
-        private void CreateInputLayer(List<List<double>>? weightsList)
-        {
-            if (weightsList.Count != Topology.InputNeuronsCount) throw new Exception("Bad topology");
-
-            var layer = new Layer();
-            foreach (var weights in weightsList)
+            //записуємо помилки для Hidden Layers. Input Layer помилок не має
+            for (var layerIndex = Layers.Count - 2; layerIndex > 0; layerIndex--)
             {
-                layer.Neurons.Add(new Neuron { Weights = weights, NeuronType = NeuronTypes.Input });
-            }
+                var curLayer = Layers[layerIndex];
+                var prevLayer = Layers[layerIndex + 1];
 
-            Layers.Add(layer);
+                for (var curNeuronIndex = 0; curNeuronIndex < curLayer.Neurons.Count; curNeuronIndex++)
+                {
+                    var currentNeuron = curLayer.Neurons[curNeuronIndex];
+                    currentNeuron.Error = 0;
+
+                    for (var prevNeuronIndex = 0; prevNeuronIndex < prevLayer.Neurons.Count; prevNeuronIndex++)
+                    {
+                        var prevNeuron = prevLayer.Neurons[prevNeuronIndex];
+                        currentNeuron.Error += prevNeuron.Error * prevNeuron.Weights[curNeuronIndex];
+                    }
+                }
+            }
         }
 
-        private void CreateHiddenLayers(List<List<double>> weightsList, int layerNumber)
-        {
-            if (weightsList.Count != Topology.HiddenLayersNeuronsCount[layerNumber]) throw new Exception("Bad topology");
-
-            var layer = new Layer();
-            foreach (var weights in weightsList)
-            {
-                layer.Neurons.Add(new Neuron { Weights = weights, NeuronType = NeuronTypes.Hidden });
-            }
-
-            Layers.Add(layer);
-        }
-
-        private void CreateOutputLayer(List<List<double>>? weightsList)
-        {
-            if (weightsList.Count != Topology.OutputNeuronsCount) throw new Exception("Bad topology");
-
-            var layer = new Layer();
-            foreach (var weights in weightsList)
-            {
-                layer.Neurons.Add(new Neuron { Weights = weights, NeuronType = NeuronTypes.Output });
-            }
-
-            Layers.Add(layer);
-        }
-
+        //learnTime - час навчання в мілісекундах, [learnTime]/60_000 = [хвилини]
         private void RunAndSnapshot(List<Tuple<double, double[]>> dataset, int epochCount, double learningRate, long learTime)
         {
             Console.WriteLine();
@@ -269,8 +303,6 @@ namespace MachineLearning
                     }
                 }
             }
-
-
         }
     }
 }

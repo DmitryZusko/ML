@@ -18,5 +18,14 @@
             return results;
         }
 
+        public void SetWeights(List<List<double>> weights)
+        {
+            if (weights.Count != Neurons.Count) throw new Exception("Bad topology!");
+
+            for (var i = 0; i < weights.Count; i++)
+            {
+                Neurons[i].Weights = weights[i];
+            }
+        }
     }
 }

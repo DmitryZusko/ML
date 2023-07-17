@@ -15,11 +15,5 @@
 
             return rnd.NextDouble();
         }
-
-        public static double DerivedSigmoid(double x)
-        {
-            var sigmoid = Sigmoid(x);
-            return sigmoid * (1 - sigmoid);
-        }
     }
 }
