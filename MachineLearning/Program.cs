@@ -85,13 +85,13 @@ using Newtonsoft.Json;
 
 var dataset = LoadData("LearningDataset_improoved.json");
 
-var weights = LoadWeights("weights.json");
+//var weights = LoadWeights("weights.json");
 
-var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 64 }, OutputNeuronsCount = 1, LearningRate = .15 };
+var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 64 }, OutputNeuronsCount = 1, LearningRate = .025 };
 
-//var network = new NeuralNetwork(topology);
+var network = new NeuralNetwork(topology);
 
-var network = new NeuralNetwork(topology, weights);
+//var network = new NeuralNetwork(topology, weights);
 
 network.StartLearning(dataset, 1000, network.Topology.LearningRate, true);
 
