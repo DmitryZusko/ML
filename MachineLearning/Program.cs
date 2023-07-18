@@ -2,13 +2,15 @@
 using Newtonsoft.Json;
 
 
-var dataset = LoadData("LearningDataset_improoved.json");
+var dataset = LoadData("LearningDataset_improoved2.json");
 
 var topology = new NeuralNetworkTopology { InputNeuronsCount = 19, HiddenLayersNeuronsCount = new List<int> { 64 }, OutputNeuronsCount = 1, LearningRate = .15 };
 
 var network = new NeuralNetwork(topology, false);
 
 network.LoadWeightsFromJsonFile("weights.json");
+
+//network.StartLearning(dataset, 1000, network.Topology.LearningRate, true);
 
 var dataForCalculation = new List<List<double>>();
 foreach (var data in dataset)
@@ -18,7 +20,14 @@ foreach (var data in dataset)
 
 var results = network.CalculateResults(dataForCalculation);
 
-Console.WriteLine($"Min: {results.Min()} | Max: {results.Max()}");
+var errors = new List<double>();
+
+for (var i = 0; i < results.Count; i++)
+{
+    errors.Add(results[i] - dataset[i].Item1);
+}
+
+var max = errors.Max();
 
 List<Tuple<double, double[]>> LoadData(string filePath)
 {

@@ -7,19 +7,19 @@ namespace MachineLearning
     {
         public List<Layer> Layers { get; set; } = new List<Layer>();
         public NeuralNetworkTopology Topology { get; set; } = null!;
-        private UserConnection _userConnection;
-        public UserConnection UserConnection
-        {
-            get
-            {
-                return _userConnection ??
-                    (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
-            }
-            set
-            {
-                _userConnection = value;
-            }
-        }
+        //private UserConnection _userConnection;
+        //public UserConnection UserConnection
+        //{
+        //    get
+        //    {
+        //        return _userConnection ??
+        //            (_userConnection = HttpContext.Current.Session["UserConnection"] as UserConnection);
+        //    }
+        //    set
+        //    {
+        //        _userConnection = value;
+        //    }
+        //}
 
         //якщо створюється мережа з нуля, generateWeights = true генерує рандомні значення вагів
         public NeuralNetwork(NeuralNetworkTopology topology, bool generateWeights = false)
@@ -48,33 +48,33 @@ namespace MachineLearning
             SetWeights(weights);
         }
 
-        public void LoadWeightsFromLookup(string lookupName)
-        {
-            List<List<List<double>>> weights = new();
+        //public void LoadWeightsFromLookup(string lookupName)
+        //{
+        //    List<List<List<double>>> weights = new();
 
-            Select selectWeights = new Select(UserConnection)
-            .Column("GenWeightsJson").Top(1)
-            .From(lookupName)
-            .OrderByDesc("ModifiedOn")
-            as Select;
+        //    Select selectWeights = new Select(UserConnection)
+        //    .Column("GenWeightsJson").Top(1)
+        //    .From(lookupName)
+        //    .OrderByDesc("ModifiedOn")
+        //    as Select;
 
-            using (var dbExecutor = UserConnection.EnsureDBConnection())
-            {
-                using (var reader = selectWeights.ExecuteReader(dbExecutor))
-                {
-                    if (reader.Read())
-                    {
-                        string jWeights = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0) : "";
-                        if (!string.IsNullOrEmpty(jWeights))
-                        {
-                            weights = JsonConvert.DeserializeObject<List<List<List<double>>>>(jWeights);
-                        }
-                    }
-                }
-            }
+        //    using (var dbExecutor = UserConnection.EnsureDBConnection())
+        //    {
+        //        using (var reader = selectWeights.ExecuteReader(dbExecutor))
+        //        {
+        //            if (reader.Read())
+        //            {
+        //                string jWeights = (reader.GetValue(0) != System.DBNull.Value) ? (string)reader.GetValue(0) : "";
+        //                if (!string.IsNullOrEmpty(jWeights))
+        //                {
+        //                    weights = JsonConvert.DeserializeObject<List<List<List<double>>>>(jWeights);
+        //                }
+        //            }
+        //        }
+        //    }
 
-            SetWeights(weights);
-        }
+        //    SetWeights(weights);
+        //}
 
         public List<double> CalculateResults(List<List<double>> dataset)
         {
